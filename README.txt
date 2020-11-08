@@ -6,9 +6,10 @@ a minimal set of features is complete.
 
 Roadmap
 -------
-- Env module with lazy static global scope.
-- Add tuples.
+x Env module with lazy static global scope.
+x Add tuples.
 - Add pattern matching.
+- Add interning of identifiers
 - Add pattern matching funciton definitions
   by transforming the AST.
 - Add a module system.

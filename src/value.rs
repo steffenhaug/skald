@@ -12,20 +12,31 @@ use crate::env::Env;
 pub enum Value {
     Boolean(bool),
     Function(Applicative),
+    Tuple(Vec<Value>),
 }
 
 impl Value {
-    pub fn get_applicative(&self) -> Option<Applicative> {
-        // Extract the stored applicative procedure
-        // if the value is a function type.
+    pub fn get_applicative(&self) -> Option<&Applicative> {
+        // Extract the stored applicative procedure.
         //
         // An interesting idea here, is that other values
         // could be given applicatives, for example the
         // applicative of an array could be the indexing
         // function.
         match self {
-            Value::Function(applicative) => Some(applicative.clone()),
+            Value::Function(applicative) => Some(applicative),
             _ => None
+        }
+    }
+}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        use Value::*;
+        match (self, other) {
+            (Boolean(x), Boolean(y)) => x == y,
+            (Tuple(p), Tuple(q))     => p == q,
+            _ => false
         }
     }
 }
@@ -42,7 +53,7 @@ pub enum Applicative {
         closure: Arc<Env>
     },
     // Built-in call to rust function.
-    Primitive(&'static (dyn Fn(&[Value]) -> EvalResult + Sync))
+    Primitive(&'static (dyn Fn(&[Value]) -> EvalResult + Send + Sync))
 }
 
 impl Applicative {
@@ -60,7 +71,9 @@ impl Applicative {
 
                 // Make sure they match.
                 if nparams != nargs {
-                    return Err(NumArgs { expected: nparams, found: nargs });
+                    return Err(NumArgs {
+                        expected: nparams, found: nargs
+                    });
                 }
 
                 let bindings: Vec<(&String, Value)> = params.iter()
@@ -87,19 +100,5 @@ impl std::fmt::Debug for Applicative {
             }
         }
         Ok(())
-    }
-}
-
-pub fn and(argv: &[Value]) -> EvalResult {
-    use crate::error::RuntimeError::*;
-    match argv {
-        [Value::Boolean(x), Value::Boolean(y)] =>
-            Ok(Value::Boolean(*x && *y)),
-        [Value::Boolean(_), _] =>
-            Err(TypeMismatch { argn: 1 }),
-        [_,_] =>
-            Err(TypeMismatch { argn: 0 }),
-        _ =>
-            Err(NumArgs { expected: 2, found: argv.len() })
     }
 }

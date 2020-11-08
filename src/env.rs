@@ -53,15 +53,21 @@ impl EnvBuilder {
         Arc::new(self.env)
     }
 
-    pub fn bind<S: AsRef<str>>(mut self, bindings: Vec<(S, Value)>) -> Self {
+    pub fn bind<S: AsRef<str>>(
+        mut self, bindings: Vec<(S, Value)>
+    ) -> Self {
         for (identifier, value) in bindings {
-            self.env.bindings.insert(String::from(identifier.as_ref()), value);
+            self.env.bindings
+                .insert(String::from(identifier.as_ref()), value);
         }
         self
     }
 
-    pub fn bind_one<S: AsRef<str>>(mut self, identifier: S, value: Value) -> Self {
-        self.env.bindings.insert(String::from(identifier.as_ref()), value);
+    pub fn bind_one<S: AsRef<str>>(
+        mut self, identifier: S, value: Value
+    ) -> Self {
+        self.env.bindings
+            .insert(String::from(identifier.as_ref()), value);
         self
     }
 }

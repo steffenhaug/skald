@@ -3,29 +3,25 @@ mod ast;
 mod error;
 mod env;
 
-use crate::value::Value::*;
-use crate::value::Applicative;
-use crate::ast::Expression::*;
-use crate::env::Env;
-
 fn main() {
-    let scope = Env::inside(&env::GLOBAL)
-        .bind_one("x", Boolean(false))
-        .bind_one("and", Function(Applicative::Primitive(&value::and)))
-        .build();
+    use crate::value::Value::*;
+    use crate::ast::Pattern::*;
 
-    let program = Application(vec![
-        Abstraction {
-            params: vec!["x".to_string(), "y".to_string()],
-            body: Box::new(Application(vec![
-                Identifier("and".to_string()),
-                Identifier("x".to_string()),
-                Identifier("y".to_string()),
-            ]))
-        },
-        Identifier("x".to_string()),
-        Constant(Boolean(true)),
+    let p = PTuple(vec![
+        PConstant(Boolean(true)),
+        PVariable("x".to_string()),
+        PConstant(Boolean(false)),
     ]);
 
-    println!("{:?}", program.eval(&scope));
+    let v = Tuple(vec![
+        Boolean(true),
+        Boolean(true),
+        Boolean(false),
+    ]);
+
+    let bindings = p.matches(&v);
+
+    println!("{:?}", bindings);
+                       
 }
+
