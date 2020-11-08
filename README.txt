@@ -9,13 +9,16 @@ Roadmap
 x Env module with lazy static global scope.
 x Add tuples.
 x Add pattern matching.
-- Make functions use pattern matching to bind arguments.
 - Add interning of identifiers.
   - Remove all the (currently necessary) copying of strings.
+- Add a parser so the language can be used.
 - Add pattern matching funciton definitions
   by transforming the AST.
 - Add a module system.
-- Add a parser so the language can be used.
+- Add more built-in types.
+  - strings
+  - numbers
+- Add some kind of array type.
 
 Medium-long term
 ----------------
