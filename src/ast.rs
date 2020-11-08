@@ -120,6 +120,7 @@ impl Pattern {
                         return false;
                     }
                 }
+
                 true
             }
             _ => false

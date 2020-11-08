@@ -8,8 +8,10 @@ Roadmap
 -------
 x Env module with lazy static global scope.
 x Add tuples.
-- Add pattern matching.
-- Add interning of identifiers
+x Add pattern matching.
+- Make functions use pattern matching to bind arguments.
+- Add interning of identifiers.
+  - Remove all the (currently necessary) copying of strings.
 - Add pattern matching funciton definitions
   by transforming the AST.
 - Add a module system.
@@ -24,4 +26,4 @@ Far down the line
 -----------------
 - Bytecode VM
 - Memory management
-- EZ PZ Rust integration (tm)
+- EZ PZ Rust integration

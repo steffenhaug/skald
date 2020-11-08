@@ -74,7 +74,7 @@ impl Applicative {
                     return Err(NumArgs {
                         expected: nparams, found: nargs
                     });
-                }
+                
 
                 let bindings: Vec<(&String, Value)> = params.iter()
                     .zip(args.into_iter()).collect();
