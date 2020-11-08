@@ -2,84 +2,31 @@
 // case it is just a simple type, or it is
 // a tuple, which is a compound type.
 
-use std::collections::HashMap;
-use std::rc::Rc;
-use std::cell::RefCell;
+use std::sync::Arc;
 
 use crate::ast::Expression;
 use crate::error::EvalResult;
+use crate::env::Env;
 
 #[derive(Clone, Debug)]
 pub enum Value {
     Boolean(bool),
-    Atom(String),
-    Tuple(Compound),
     Function(Applicative),
 }
 
 impl Value {
-    pub fn get_proc(&self) -> Option<Applicative> {
+    pub fn get_applicative(&self) -> Option<Applicative> {
         // Extract the stored applicative procedure
         // if the value is a function type.
+        //
+        // An interesting idea here, is that other values
+        // could be given applicatives, for example the
+        // applicative of an array could be the indexing
+        // function.
         match self {
             Value::Function(applicative) => Some(applicative.clone()),
             _ => None
         }
-    }
-}
-
-#[derive(Clone, Debug)]
-pub struct Compound {
-    values: Vec<Value>
-}
-
-impl Compound {
-    fn arity(&self) -> usize {
-        self.values.len()
-    }
-}
-
-#[derive(Debug, Clone)]
-pub struct Env {
-    bindings: RefCell<HashMap<String, Value>>,
-    parent: Option<Rc<Env>>
-}
-
-impl Env {
-    pub fn inside(outer: &Rc<Env>) -> Rc<Env> {
-        Rc::new(Env {
-            bindings: RefCell::new(HashMap::new()),
-            parent: Some(Rc::clone(outer))
-        })
-    }
-
-    pub fn global() -> Rc<Env> {
-        Rc::new(Env {
-            bindings: RefCell::new(HashMap::new()),
-            parent: None
-        })
-    }
-
-    pub fn get(&self, identifier: &str) -> Option<Value> {
-        match self.bindings.borrow().get(identifier) {
-            Some(val) => Some(val.clone()),
-            None => match &self.parent {
-                None => None,
-                Some(parent) => parent.get(identifier)
-            }
-        }
-    }
-
-    pub fn bind(&self, bindings: Vec<(&str, Value)>) {
-        for (identifier, value) in bindings {
-            self.bind_one(identifier, value);
-        }
-    }
-
-    pub fn bind_one(&self, identifier: &str, value: Value) {
-        self.bindings
-            .borrow_mut()
-            .insert(identifier.to_string(), value);
     }
 }
 
@@ -92,19 +39,19 @@ pub enum Applicative {
     Lambda {
         params: Vec<String>,
         body: Box<Expression>,
-        closure: Rc<Env>
+        closure: Arc<Env>
     },
     // Built-in call to rust function.
-    Primitive(&'static dyn Fn(&[Value]) -> EvalResult)
+    Primitive(&'static (dyn Fn(&[Value]) -> EvalResult + Sync))
 }
 
 impl Applicative {
-    pub fn apply(&self, args: &[Value]) -> EvalResult {
+    pub fn apply(&self, args: Vec<Value>) -> EvalResult {
         use crate::error::RuntimeError::*;
         match self {
             Applicative::Primitive(proc) => {
                 // The easy case B)
-                proc(args)
+                proc(&args)
             },
             Applicative::Lambda { params, body, closure } => {
                 // Count the # of parameters and arguments.
@@ -116,13 +63,14 @@ impl Applicative {
                     return Err(NumArgs { expected: nparams, found: nargs });
                 }
 
-                // yikes
-                let bindings: Vec<(&str, Value)> = params.iter()
-                    .map(|strref| &strref[..])
-                    .zip(args.iter().map(|vref| vref.clone())).collect();
+                let bindings: Vec<(&String, Value)> = params.iter()
+                    .zip(args.into_iter()).collect();
 
-                closure.bind(bindings);
-                body.eval(&closure)
+                let env = Env::inside(closure)
+                    .bind(bindings)
+                    .build();
+
+                body.eval(&env)
             }
         }
     }

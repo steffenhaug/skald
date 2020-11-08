@@ -1,8 +1,9 @@
-use crate::value::{Value, Applicative, Env};
+use crate::value::{Value, Applicative};
 use crate::error::EvalResult;
+use crate::env::Env;
 use Value::*;
 
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Debug, Clone)]
 pub enum Expression {
@@ -13,13 +14,17 @@ pub enum Expression {
 }
 
 impl Expression {
-    pub fn eval(&self, env: &Rc<Env>) -> EvalResult {
+    pub fn eval(&self, env: &Arc<Env>) -> EvalResult {
         use Expression::*;
         use crate::error::RuntimeError::*;
         match self {
-            Constant(val) => Ok(val.clone()),
+            Constant(val) => {
+                // Constants evaluate to their contained value.
+                Ok(val.clone())
+            },
             Identifier(name) => {
-                // Get the value from the environment.
+                // Identifiers evaluate to the value stored in
+                // the innermost 
                 env.get(name).ok_or(Undefined { identifier: String::from(name) })
             },
             Application(list) => {
@@ -29,34 +34,37 @@ impl Expression {
 
                 // Extract the stored procedure.
                 let proc =
-                    if let Some(applicative) = func.get_proc() {
+                    if let Some(applicative) = func.get_applicative() {
                         applicative
                     } else {
                         return Err(NotApplicative);
                     };
 
                 // Evaluate the arguments.
-                // Each argument is an expression, which
-                // needs to be evaluated before we can apply
-                // the function.
-                // Note the edge case where the application
-                // takes no arguments. If list has only one
-                // element, list[1..] is actually an empty
-                // slice.
                 let mut argv: Vec<Value> = Vec::new();
+
+                // Note the edge case where list has lengt
+                // one. Then list[1..] still works fine,
+                // and is an empty slice. No error!
                 for expr in list[1..].iter() {
                     let arg = expr.eval(env)?;
                     argv.push(arg);
                 }
 
-                proc.apply(&argv)
+                // Finally apply the procedure to the argument vector.
+                proc.apply(argv)
             },
             Abstraction { params, body } => {
-                let closure = Env::inside(env);
+                // Create a new environment that includes
+                // references to the scope in which the function
+                // was defined in its parent.
+                let closure = Arc::clone(env);
+
+                // Construct the function.
                 Ok(Function(Applicative::Lambda {
                     params: params.to_vec(),
                     body: body.clone(),
-                    closure: closure
+                    closure
                 }))
             }
             
