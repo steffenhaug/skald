@@ -71,6 +71,9 @@ impl Expression {
                 // references to the scope in which the function
                 // was defined in its parent.
                 let closure = Arc::clone(env);
+                // Note that the environment is exactly the same,
+                // so evaluation will reflect changes to the
+                // enclosing environment after definition.
 
                 // Construct the function.
                 Ok(Value::Function(Applicative::Lambda {
@@ -86,6 +89,7 @@ impl Expression {
                     let element = expr.eval(env)?;
                     elements.push(element);
                 }
+
                 Ok(Value::Tuple(elements))
             },
             Match { term, clauses } => {
