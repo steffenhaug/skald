@@ -1,5 +1,5 @@
-Rune
-====
+Skald
+=====
 Another silly little interpreter!
 Tree-walking with no memory management until
 a minimal set of features is complete. 
