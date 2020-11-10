@@ -3,7 +3,7 @@
 use std::collections::HashMap;
 
 pub struct Interner {
-    names: Vec<*const str>,
+    lookup: Vec<String>,
     dictionary: HashMap<String, usize>
 }
 
@@ -13,7 +13,7 @@ pub struct Symbol(usize);
 impl Interner {
     pub fn new() -> Interner {
         Interner {
-            names: Vec::new(),
+            lookup: Vec::new(),
             dictionary: HashMap::new()
         }
     }
@@ -23,19 +23,17 @@ impl Interner {
             return Symbol(idx);
         }
 
-        let idx = self.names.len();
-        let key = String::from(sym);
-        // Danger!
-        let ptr: *const str = &(*key);
 
-        self.dictionary.insert(key, idx);
-        self.names.push(ptr);
+        let idx = self.lookup.len();
+        self.lookup.push(String::from(sym));
+        self.dictionary.insert(String::from(sym), idx);
+
 
         Symbol(idx)
     }
 
     pub fn lookup(&self, sym: Symbol) -> &str {
-        unsafe { self.names[sym.0] }
+        self.lookup[sym.0].as_ref()
     }
 }
 
