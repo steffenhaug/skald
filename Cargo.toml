@@ -1,5 +1,5 @@
 [package]
-name = "rune"
+name = "skald"
 version = "0.1.0"
 authors = ["Steffen Haug <steffen@haug.rs>"]
 edition = "2018"

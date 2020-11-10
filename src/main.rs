@@ -6,4 +6,5 @@ mod pattern;
 mod strintern;
 
 fn main() {
+
 }
