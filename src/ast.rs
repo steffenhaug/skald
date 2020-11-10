@@ -2,6 +2,7 @@ use crate::value::{Value, Applicative};
 use crate::error::EvalResult;
 use crate::env::Env;
 use crate::pattern::Pattern;
+use crate::strintern::Symbol;
 
 use std::sync::Arc;
 
@@ -12,10 +13,10 @@ use std::sync::Arc;
 #[derive(Clone, Debug)]
 pub enum Expression {
     Constant(Value),
-    Variable(String),
+    Variable(Symbol),
     TupleConstructor(Vec<Expression>),
     Application(Vec<Expression>),
-    Abstraction { params: Vec<String>, body: Box<Expression> },
+    Abstraction { params: Vec<Symbol>, body: Box<Expression> },
     Match { term: Box<Expression>, clauses: Vec<(Pattern, Expression)> },
 }
 
@@ -33,9 +34,9 @@ impl Expression {
             // Constants evaluate to their contained value.
             Constant(val) => Ok(val.clone()),
             // Variables evaluate to the value associated with it.
-            Variable(name) => {
-                env.get(name).ok_or(
-                    Undefined { identifier: String::from(name) }
+            Variable(sym) => {
+                env.get(sym).ok_or(
+                    Undefined { identifier: *sym }
                 )
             },
             Application(list) => {
@@ -127,6 +128,7 @@ mod tests {
     use crate::error::EvalResult;
     use crate::env::*;
     use crate::pattern::Pattern::*;
+    use crate::strintern::{Interner,Symbol};
 
     #[test]
     fn pattern_matching_expression() {
@@ -137,10 +139,14 @@ mod tests {
         //   (true,  true)  -> false
         //   (false, false) -> false
         //   (false, true)  -> true
+        let mut identifiers = Interner::new();
+        let x: Symbol = identifiers.intern("x");
+        let y: Symbol = identifiers.intern("y");
+
         let program = Match {
             term: Box::new(Expression::TupleConstructor(vec![
-                Expression::Variable("x".to_string()),
-                Expression::Variable("y".to_string())
+                Expression::Variable(x),
+                Expression::Variable(y)
             ])),
             clauses: vec![
                 (PTupleConstructor(vec![
@@ -163,11 +169,13 @@ mod tests {
         };
 
         // let x = false
-        // let x = true
+        // let y = true
         let env = Env::inside(&GLOBAL)
-            .bind_one("x", Boolean(false))
-            .bind_one("y", Boolean(true))
+            .bind_one(x, Boolean(false))
+            .bind_one(y, Boolean(true))
             .build();
+
+        // As expected, x (xor) y is true.
         let result = program.eval(&env).unwrap();
         assert_eq!(result, Boolean(true));
     }
@@ -179,7 +187,7 @@ mod tests {
         // with constants, identifiers, abstractions and
         // function application of abstractions as well
         // as primitive operations.
-        fn and(argv: &[Value]) -> EvalResult {
+        fn bin_op_and(argv: &[Value]) -> EvalResult {
             match argv {
                 [Boolean(x), Boolean(y)] => Ok(Boolean(*x && *y)),
                 [Boolean(_), _]          =>
@@ -190,24 +198,29 @@ mod tests {
             }
         }
 
+        let mut identifiers = Interner::new();
+        let x: Symbol = identifiers.intern("x");
+        let y: Symbol = identifiers.intern("y");
+        let and: Symbol = identifiers.intern("and");
+
         // let x = false
         // let and = extern and
         let scope = Env::inside(&GLOBAL)
-            .bind_one("x", Boolean(false))
-            .bind_one("and", Function(Applicative::Primitive(&and)))
+            .bind_one(x, Boolean(false))
+            .bind_one(and, Function(Applicative::Primitive(&bin_op_and)))
             .build();
 
-        // (lambda (x, y) and(x, y))(x, true)
+        // ((lambda (x y) (and x y)) x true)
         let program = Application(vec![
             Abstraction {
-                params: vec!["x".to_string(), "y".to_string()],
+                params: vec![x, y],
                 body: Box::new(Application(vec![
-                    Variable("and".to_string()),
-                    Variable("x".to_string()),
-                    Variable("y".to_string()),
+                    Variable(and),
+                    Variable(x),
+                    Variable(y),
                 ]))
             },
-            Variable("x".to_string()),
+            Variable(x),
             Constant(Boolean(true)),
         ]);
 

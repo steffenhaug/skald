@@ -1,4 +1,5 @@
 use crate::value::Value;
+use crate::strintern::Symbol;
 // The pattern language is made up of
 // syntax to destructure the built-in
 // types of the interpreter.
@@ -12,12 +13,12 @@ use crate::value::Value;
 #[derive(Clone, Debug)]
 pub enum Pattern {
     PConstant(Value),
-    PVariable(String),
+    PVariable(Symbol),
     PTupleConstructor(Vec<Pattern>)
 }
 
 impl Pattern {
-    pub fn matches(&self, value: &Value) -> Option<Vec<(String, Value)>> {
+    pub fn matches(&self, value: &Value) -> Option<Vec<(Symbol, Value)>> {
         let mut bindings = Vec::new();
 
         if !self.find_bindings(value, &mut bindings) {
@@ -27,12 +28,12 @@ impl Pattern {
         Some(bindings)
     }
 
-    fn find_bindings(&self, value: &Value, bindings: &mut Vec<(String, Value)>) -> bool {
+    fn find_bindings(&self, value: &Value, bindings: &mut Vec<(Symbol, Value)>) -> bool {
         use Pattern::*;
         match (self, value) {
             (PConstant(pval), val) => pval == val,
-            (PVariable(name), val) => {
-                bindings.push((name.to_string(), val.clone()));
+            (PVariable(sym),  val) => {
+                bindings.push((*sym, val.clone()));
                 true
             },
             (PTupleConstructor(nested_patterns), Value::Tuple(nested_values)) => {
@@ -57,12 +58,16 @@ impl Pattern {
 mod tests {
     use crate::value::Value::*;
     use crate::pattern::Pattern::*;
+    use crate::strintern::Interner;
 
     #[test]
     fn match_tuple_pattern() {
+        let mut interner = Interner::new();
+        let x = interner.intern("x");
+        
         let p = PTupleConstructor(vec![
             PConstant(Boolean(true)),
-            PVariable("x".to_string())
+            PVariable(x)
         ]);
 
         let v = Tuple(vec![
@@ -72,17 +77,20 @@ mod tests {
 
         let bindings = p.matches(&v);
 
-        assert_eq!(bindings, Some(vec![("x".to_string(), Boolean(false))]));
+        assert_eq!(bindings, Some(vec![(x, Boolean(false))]));
     }
 
     #[test]
     fn variable_pattern_produces_binding() {
-        let p = PVariable("x".to_string());
+        let mut interner = Interner::new();
+        let x = interner.intern("x");
+        
+        let p = PVariable(x);
         let v = Boolean(true);
 
         let bindings = p.matches(&v);
 
-        assert_eq!(bindings, Some(vec![("x".to_string(), Boolean(true))]));
+        assert_eq!(bindings, Some(vec![(x, Boolean(true))]));
     }
 
     #[test]

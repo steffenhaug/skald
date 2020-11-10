@@ -1,14 +1,12 @@
-
-
 use std::collections::HashMap;
+
+#[derive(Debug, Hash, Eq, PartialEq, Clone, Copy)]
+pub struct Symbol(usize);
 
 pub struct Interner {
     lookup: Vec<String>,
     dictionary: HashMap<String, usize>
 }
-
-#[derive(Debug, Eq, PartialEq, Clone, Copy)]
-pub struct Symbol(usize);
 
 impl Interner {
     pub fn new() -> Interner {
@@ -23,11 +21,9 @@ impl Interner {
             return Symbol(idx);
         }
 
-
         let idx = self.lookup.len();
         self.lookup.push(String::from(sym));
         self.dictionary.insert(String::from(sym), idx);
-
 
         Symbol(idx)
     }
@@ -44,9 +40,14 @@ mod tests {
     #[test]
     fn intern_equal_strings_are_equal() {
         let mut interner = Interner::new();
+
+        // intern two strings that are both owned, so
+        // we know they are separate allocations.
         let x1: Symbol = interner.intern(&String::from("x"));
-        let x2: Symbol = interner.intern("x");
-        assert_eq!(x1, x2);
+        let x2: Symbol = interner.intern(&String::from("x"));
+
+        // They are the same index.
+        assert_eq!(x1.0, x2.0);
         // Symbols reference *the exact same string*.
         assert_eq!(interner.lookup(x1).as_ptr(), interner.lookup(x2).as_ptr());
     }

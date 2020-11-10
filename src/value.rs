@@ -7,6 +7,7 @@ use std::sync::Arc;
 use crate::ast::Expression;
 use crate::error::EvalResult;
 use crate::env::Env;
+use crate::strintern::Symbol;
 
 #[derive(Clone, Debug)]
 pub enum Value {
@@ -48,7 +49,7 @@ impl PartialEq for Value {
 pub enum Applicative {
     // Lambda abstraction.
     Lambda {
-        params: Vec<String>,
+        params: Vec<Symbol>,
         body: Box<Expression>,
         closure: Arc<Env>
     },
@@ -76,7 +77,8 @@ impl Applicative {
                     });
                 }
 
-                let bindings: Vec<(&String, Value)> = params.iter()
+                let bindings: Vec<(Symbol, Value)> = params.iter()
+                    .map(|sym_ref|  *sym_ref)
                     .zip(args.into_iter()).collect();
 
                 let env = Env::inside(closure)

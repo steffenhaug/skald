@@ -2,12 +2,13 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::value::Value;
+use crate::strintern::Symbol;
 
 use lazy_static::lazy_static;
 
 #[derive(Debug)]
 pub struct Env {
-    bindings: HashMap<String, Value>,
+    bindings: HashMap<Symbol, Value>,
     parent: Option<Arc<Env>>
 }
 
@@ -30,7 +31,7 @@ impl Env {
         EnvBuilder { env: global_scope }
     }
 
-    pub fn get(&self, identifier: &str) -> Option<Value> {
+    pub fn get(&self, identifier: &Symbol) -> Option<Value> {
         match self.bindings.get(identifier) {
             Some(value) => Some(value.clone()),
             None =>
@@ -44,6 +45,11 @@ impl Env {
 
 }
 
+lazy_static! {
+    pub static ref GLOBAL: Arc<Env> = Env::global()
+        .build();
+}
+
 pub struct EnvBuilder {
     env: Env
 }
@@ -53,26 +59,16 @@ impl EnvBuilder {
         Arc::new(self.env)
     }
 
-    pub fn bind<S: AsRef<str>>(
-        mut self, bindings: Vec<(S, Value)>
-    ) -> Self {
-        for (identifier, value) in bindings {
-            self.env.bindings
-                .insert(String::from(identifier.as_ref()), value);
+    pub fn bind(mut self, bindings: Vec<(Symbol, Value)>) -> Self {
+        for (sym, value) in bindings {
+            self.env.bindings.insert(sym, value);
         }
         self
     }
 
-    pub fn bind_one<S: AsRef<str>>(
-        mut self, identifier: S, value: Value
-    ) -> Self {
-        self.env.bindings
-            .insert(String::from(identifier.as_ref()), value);
+    pub fn bind_one(mut self, sym: Symbol, value: Value) -> Self {
+        self.env.bindings.insert(sym, value);
         self
     }
 }
 
-lazy_static! {
-    pub static ref GLOBAL: Arc<Env> = Env::global()
-        .build();
-}
