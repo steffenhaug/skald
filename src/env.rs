@@ -2,13 +2,10 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use crate::value::Value;
-use crate::strintern::Symbol;
-
-use lazy_static::lazy_static;
 
 #[derive(Debug)]
 pub struct Env {
-    bindings: HashMap<Symbol, Value>,
+    bindings: HashMap<String, Value>,
     parent: Option<Arc<Env>>
 }
 
@@ -31,7 +28,7 @@ impl Env {
         EnvBuilder { env: global_scope }
     }
 
-    pub fn get(&self, identifier: &Symbol) -> Option<Value> {
+    pub fn get(&self, identifier: &str) -> Option<Value> {
         match self.bindings.get(identifier) {
             Some(value) => Some(value.clone()),
             None =>
@@ -45,11 +42,6 @@ impl Env {
 
 }
 
-lazy_static! {
-    pub static ref GLOBAL: Arc<Env> = Env::global()
-        .build();
-}
-
 pub struct EnvBuilder {
     env: Env
 }
@@ -59,14 +51,14 @@ impl EnvBuilder {
         Arc::new(self.env)
     }
 
-    pub fn bind(mut self, bindings: Vec<(Symbol, Value)>) -> Self {
+    pub fn bind(mut self, bindings: Vec<(String, Value)>) -> Self {
         for (sym, value) in bindings {
             self.env.bindings.insert(sym, value);
         }
         self
     }
 
-    pub fn bind_one(mut self, sym: Symbol, value: Value) -> Self {
+    pub fn bind_one(mut self, sym: String, value: Value) -> Self {
         self.env.bindings.insert(sym, value);
         self
     }

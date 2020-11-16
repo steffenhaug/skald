@@ -7,13 +7,17 @@ use std::sync::Arc;
 use crate::ast::Expression;
 use crate::error::EvalResult;
 use crate::env::Env;
-use crate::strintern::Symbol;
 
 #[derive(Clone, Debug)]
 pub enum Value {
-    Boolean(bool),
+    Simple(Primitive),
     Function(Applicative),
     Tuple(Vec<Value>),
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Primitive {
+    Boolean(bool),
 }
 
 impl Value {
@@ -35,8 +39,8 @@ impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
         use Value::*;
         match (self, other) {
-            (Boolean(x), Boolean(y)) => x == y,
-            (Tuple(p), Tuple(q))     => p == q,
+            (Simple(x), Simple(y)) => x == y,
+            (Tuple(p), Tuple(q))   => p == q,
             _ => false
         }
     }
@@ -49,7 +53,7 @@ impl PartialEq for Value {
 pub enum Applicative {
     // Lambda abstraction.
     Lambda {
-        params: Vec<Symbol>,
+        params: Vec<String>,
         body: Box<Expression>,
         closure: Arc<Env>
     },
@@ -77,8 +81,8 @@ impl Applicative {
                     });
                 }
 
-                let bindings: Vec<(Symbol, Value)> = params.iter()
-                    .map(|sym_ref|  *sym_ref)
+                let bindings: Vec<(String, Value)> = params.iter()
+                    .map(|sym|  String::from(sym))
                     .zip(args.into_iter()).collect();
 
                 let env = Env::inside(closure)

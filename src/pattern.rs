@@ -1,5 +1,4 @@
 use crate::value::Value;
-use crate::strintern::Symbol;
 // The pattern language is made up of
 // syntax to destructure the built-in
 // types of the interpreter.
@@ -13,12 +12,12 @@ use crate::strintern::Symbol;
 #[derive(Clone, Debug)]
 pub enum Pattern {
     PConstant(Value),
-    PVariable(Symbol),
+    PVariable(String),
     PTupleConstructor(Vec<Pattern>)
 }
 
 impl Pattern {
-    pub fn matches(&self, value: &Value) -> Option<Vec<(Symbol, Value)>> {
+    pub fn matches(&self, value: &Value) -> Option<Vec<(String, Value)>> {
         let mut bindings = Vec::new();
 
         if !self.find_bindings(value, &mut bindings) {
@@ -28,12 +27,12 @@ impl Pattern {
         Some(bindings)
     }
 
-    fn find_bindings(&self, value: &Value, bindings: &mut Vec<(Symbol, Value)>) -> bool {
+    fn find_bindings(&self, value: &Value, bindings: &mut Vec<(String, Value)>) -> bool {
         use Pattern::*;
         match (self, value) {
             (PConstant(pval), val) => pval == val,
             (PVariable(sym),  val) => {
-                bindings.push((*sym, val.clone()));
+                bindings.push((String::from(sym), val.clone()));
                 true
             },
             (PTupleConstructor(nested_patterns), Value::Tuple(nested_values)) => {
@@ -51,65 +50,5 @@ impl Pattern {
             }
             _ => false
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::value::Value::*;
-    use crate::pattern::Pattern::*;
-    use crate::strintern::Interner;
-
-    #[test]
-    fn match_tuple_pattern() {
-        let mut interner = Interner::new();
-        let x = interner.intern("x");
-        
-        let p = PTupleConstructor(vec![
-            PConstant(Boolean(true)),
-            PVariable(x)
-        ]);
-
-        let v = Tuple(vec![
-            Boolean(true),
-            Boolean(false),
-        ]);
-
-        let bindings = p.matches(&v);
-
-        assert_eq!(bindings, Some(vec![(x, Boolean(false))]));
-    }
-
-    #[test]
-    fn variable_pattern_produces_binding() {
-        let mut interner = Interner::new();
-        let x = interner.intern("x");
-        
-        let p = PVariable(x);
-        let v = Boolean(true);
-
-        let bindings = p.matches(&v);
-
-        assert_eq!(bindings, Some(vec![(x, Boolean(true))]));
-    }
-
-    #[test]
-    fn constant_matches_equal_value() {
-        let p = PConstant(Boolean(false));
-        let v = Boolean(false);
-
-        let bindings = p.matches(&v);
-
-        assert_eq!(bindings, Some(vec![]));
-    }
-
-    #[test]
-    fn constant_match_fails_diff_value() {
-        let p = PConstant(Boolean(false));
-        let v = Boolean(true);
-
-        let bindings = p.matches(&v);
-
-        assert_eq!(bindings, None);
     }
 }

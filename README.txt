@@ -17,6 +17,7 @@ x Add interning of identifiers.
   - This might be catastophic with regards to error reporting.
      Might be better to modify the interpretation of functions
      to always be pattern matching.
+- Add pattern matching guards
 - Add a module system.
 - Add more built-in types.
   - strings
