@@ -31,7 +31,7 @@ impl Expression {
 
         match self {
             // Constants evaluate to their contained value.
-            Constant(primitive) => Ok(Value::Simple(*primitive)),
+            Constant(primitive) => Ok(Value::Simple(primitive.clone())),
             // Variables evaluate to the value associated with it.
             Variable(sym) => {
                 env.get(sym).ok_or(

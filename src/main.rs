@@ -1,13 +1,14 @@
+extern crate pest;
+#[macro_use]
+extern crate pest_derive;
+
 mod value;
 mod error;
 mod ast;
 mod env;
 mod pattern;
-mod lex;
-
-use crate::lex::Lexer;
+mod parsing;
 
 fn main() {
-    let src = String::from("");
-    let mut lexer = Lexer::lex(src);
+    parsing::parse("test-identifier");
 }

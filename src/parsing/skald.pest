@@ -1,0 +1,10 @@
+skald = { ident }
+ident = { ident_start ~ (ident_char)* }
+
+// =====================
+// Character categories.
+// =====================
+alpha = _{ 'a'..'z' | 'A'..'Z' }
+digit = _{ '0'..'9' }
+ident_start = _{ alpha | "+" | "-" | "*" | "/" | "_" }
+ident_char  = _{ ident_start | digit }

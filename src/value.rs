@@ -15,9 +15,10 @@ pub enum Value {
     Tuple(Vec<Value>),
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Primitive {
     Boolean(bool),
+    Symbolic(String),
 }
 
 impl Value {
